@@ -1,5 +1,25 @@
 use std::io::{self, Write};
 
+enum Command<'a> {
+    Exit,
+    Echo(&'a str),
+    Undefined,
+}
+
+fn parse_command(command: &str) -> Command<'_> {
+
+    let mut parts = command.splitn(2, ' ');
+
+    let name = parts.next().unwrap_or("");
+    let args = parts.next().unwrap_or("");
+
+    match name {
+        "exit" => Command::Exit,
+        "echo" => Command::Echo(args),
+        &_ => Command::Undefined,
+    }
+}
+
 fn run() {
     loop {
         print!("$ ");
@@ -8,10 +28,11 @@ fn run() {
         match read_input() {
             Some(command) => {
                 let command = command.trim();
-                if command == "exit" {
-                    break
+                match parse_command(command) {
+                    Command::Exit => break,
+                    Command::Echo(args) => println!("{}", args),
+                    Command::Undefined => println!("{}: command not found", command),
                 }
-                println!("{}: command not found", command);
             },
             None => break,
         }

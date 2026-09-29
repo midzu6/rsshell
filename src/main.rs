@@ -5,10 +5,14 @@ fn run() {
         print!("$ ");
         io::stdout().flush().unwrap();
 
-        if let Some(command) = read_input() {
-            println!("{}: command not found", command.trim());
-        } else {
-            break;
+        match read_input() {
+            Some(command) => {
+                if command.trim() == "exit" {
+                    break
+                }
+                println!("{}: command not found", command.trim());
+            },
+            None => break,
         }
     }
 }

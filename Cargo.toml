@@ -1,5 +1,5 @@
 [package]
-name = "fvxshell"
+name = "codecrafters-shell"
 version = "0.1.0"
 authors = ["fvexy"]
 edition = "2024"

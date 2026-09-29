@@ -7,10 +7,11 @@ fn run() {
 
         match read_input() {
             Some(command) => {
-                if command.trim() == "exit" {
+                let command = command.trim();
+                if command == "exit" {
                     break
                 }
-                println!("{}: command not found", command.trim());
+                println!("{}: command not found", command);
             },
             None => break,
         }

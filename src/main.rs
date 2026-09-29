@@ -1,18 +1,30 @@
-#[allow(unused_imports)]
 use std::io::{self, Write};
-
 
 fn run() {
     loop {
         print!("$ ");
         io::stdout().flush().unwrap();
 
-        let mut command = String::new();
+        if let Some(command) = read_input() {
+            println!("{}: command not found", command.trim());
+        } else {
+            break;
+        }
+    }
+}
 
-        io::stdin().read_line(&mut command).unwrap();
+fn read_input() -> Option<String> {
+    let mut buf = String::new();
 
-        println!("{}: command not found", command.trim());
-        io::stdout().flush().unwrap();
+    match io::stdin().read_line(&mut buf) {
+        Ok(n) => {
+            if n == 0 {
+                None
+            } else {
+                Some(buf)
+            }
+        }
+        Err(err) => panic!("err: {}", err),
     }
 }
 

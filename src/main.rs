@@ -3,6 +3,7 @@ use std::io::{self, Write};
 enum Command<'a> {
     Exit,
     Echo(&'a str),
+    Type(&'a str),
     Undefined,
 }
 
@@ -16,6 +17,7 @@ fn parse_command(command: &str) -> Command<'_> {
     match name {
         "exit" => Command::Exit,
         "echo" => Command::Echo(args),
+        "type" => Command::Type(args),
         &_ => Command::Undefined,
     }
 }
@@ -31,6 +33,13 @@ fn run() {
                 match parse_command(command) {
                     Command::Exit => break,
                     Command::Echo(args) => println!("{}", args),
+                    Command::Type(name) => {
+                        match name {
+                            "echo" => println!("echo is a shell builtin"),
+                            "exit" => println!("exit is a shell builtin"),
+                            &_ => println!("{}: not found", name),
+                        }
+                    },
                     Command::Undefined => println!("{}: command not found", command),
                 }
             },

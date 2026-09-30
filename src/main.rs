@@ -1,5 +1,7 @@
 use std::io::{self, Write};
 
+mod path;
+
 enum Command<'a> {
     Exit,
     Echo(&'a str),
@@ -35,10 +37,11 @@ fn run() {
                     Command::Echo(args) => println!("{}", args),
                     Command::Type(name) => {
                         match name {
-                            "echo" => println!("echo is a shell builtin"),
-                            "exit" => println!("exit is a shell builtin"),
-                            "type" => println!("type is a shell builtin"),
-                            &_ => println!("{}: not found", name),
+                            "echo" | "exit" | "type" => println!("{} is a shell builtin", name),
+                            _ => match path::find_in_path(name) {
+                                Some(p) => println!("{} is {}", name, p.display()),
+                                None => println!("{}: not found", name)
+                            }
                         }
                     },
                     Command::Undefined => println!("{}: command not found", command),

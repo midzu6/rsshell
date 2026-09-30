@@ -1,6 +1,7 @@
 use ::std::env;
 use std::{io, path::PathBuf};
 
+
 pub fn find_in_path(name: &str) -> Option<PathBuf> {
     let path_var = env::var_os("PATH")?;
 
@@ -16,6 +17,10 @@ pub fn find_in_path(name: &str) -> Option<PathBuf> {
 
 pub fn current_directory() -> io::Result<PathBuf>{
     env::current_dir()
+}
+
+pub fn change_directory(path: &str) -> io::Result<()> {
+    env::set_current_dir(path)
 }
 
 #[cfg(unix)]

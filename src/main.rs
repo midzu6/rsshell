@@ -13,6 +13,7 @@ enum Command<'a> {
     Echo(ParsedCommand<'a>),
     Type(ParsedCommand<'a>),
     External(ParsedCommand<'a>),
+    Cd(ParsedCommand<'a>),
     Pwd,
 }
 
@@ -29,6 +30,7 @@ fn parse_command(command: &str) -> Command<'_> {
         "echo" => Command::Echo(command),
         "type" => Command::Type(command),
         "pwd" => Command::Pwd,
+        "cd" => Command::Cd(command),
         _ => Command::External(command),
     }
 }
@@ -56,7 +58,7 @@ fn run() {
                         };
 
                         match target {
-                            "echo" | "exit" | "type" | "pwd" => println!("{} is a shell builtin", target),
+                            "echo" | "exit" | "type" | "pwd" | "cd" => println!("{} is a shell builtin", target),
                             _ => match path::find_in_path(target) {
                                 Some(p) => println!("{} is {}", target, p.display()),
                                 None => println!("{}: not found", target),
@@ -73,6 +75,17 @@ fn run() {
                     Command::Pwd => match path::current_directory() {
                         Ok(dir) => println!("{}", dir.display()),
                         Err(err) => eprintln!("error: {}", err)
+                    },
+                    Command::Cd(cmd) => {
+                        let target_dir = match cmd.args.first() {
+                            Some(dir) => *dir,
+                            None => {continue;}
+                        };
+
+                        match path::change_directory(target_dir) {
+                            Ok(()) => {},
+                            Err(_) => println!("cd: {}: No such file or directory", target_dir),
+                        }
                     }
                 }
             }

@@ -13,6 +13,7 @@ enum Command<'a> {
     Echo(ParsedCommand<'a>),
     Type(ParsedCommand<'a>),
     External(ParsedCommand<'a>),
+    Pwd,
 }
 
 fn parse_command(command: &str) -> Command<'_> {
@@ -27,6 +28,7 @@ fn parse_command(command: &str) -> Command<'_> {
         "exit" => Command::Exit,
         "echo" => Command::Echo(command),
         "type" => Command::Type(command),
+        "pwd" => Command::Pwd,
         _ => Command::External(command),
     }
 }
@@ -60,7 +62,7 @@ fn run() {
                                 None => println!("{}: not found", target),
                             },
                         }
-                    }
+                    },
                     Command::External(cmd) => match path::find_in_path(cmd.name) {
                         Some(path) => match process::run_program(&path, &cmd.name, &cmd.args) {
                             Ok(()) => {}
@@ -68,6 +70,10 @@ fn run() {
                         },
                         None => println!("{}: not found", cmd.name),
                     },
+                    Command::Pwd => match path::current_directory() {
+                        Ok(dir) => println!("{}", dir.display()),
+                        Err(err) => eprintln!("error: {}", err)
+                    }
                 }
             }
             None => break,

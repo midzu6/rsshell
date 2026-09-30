@@ -1,97 +1,24 @@
-use std::io::{self, Write};
+use parser::{Command, parse_command};
+use std::{
+    io::{self, Write},
+    ops::ControlFlow,
+};
 
+mod builtins;
+mod parser;
 mod path;
 mod process;
 
-struct ParsedCommand<'a> {
-    name: &'a str,
-    args: Vec<&'a str>,
-}
-
-enum Command<'a> {
-    Exit,
-    Echo(ParsedCommand<'a>),
-    Type(ParsedCommand<'a>),
-    External(ParsedCommand<'a>),
-    Cd(ParsedCommand<'a>),
-    Pwd,
-}
-
-fn parse_command(command: &str) -> Command<'_> {
-    let mut parts = command.split_whitespace();
-
-    let name = parts.next().unwrap_or("");
-    let args: Vec<&str> = parts.collect();
-
-    let command = ParsedCommand { name, args };
-
-    match name {
-        "exit" => Command::Exit,
-        "echo" => Command::Echo(command),
-        "type" => Command::Type(command),
-        "pwd" => Command::Pwd,
-        "cd" => Command::Cd(command),
-        _ => Command::External(command),
+fn execute(cmd: Command) -> ControlFlow<()> {
+    match cmd {
+        Command::Exit => return ControlFlow::Break(()),
+        Command::Cd(args) => builtins::builtin_cd(&args),
+        Command::Echo(args) => builtins::builtin_echo(&args),
+        Command::Pwd => builtins::builtin_pwd(),
+        Command::Type(args) => builtins::builtin_type(&args),
+        Command::External { name, args } => process::run_external(&name, &args),
     }
-}
-
-fn run() {
-    loop {
-        print!("$ ");
-        io::stdout().flush().unwrap();
-
-        match read_input() {
-            Some(command) => {
-                let command = command.trim();
-                if command.is_empty() {
-                    continue;
-                }
-                match parse_command(command) {
-                    Command::Exit => break,
-                    Command::Echo(cmd) => println!("{}", cmd.args.join(" ")),
-                    Command::Type(cmd) => {
-                        let target = match cmd.args.first() {
-                            Some(t) => *t,
-                            None => {
-                                continue;
-                            }
-                        };
-
-                        match target {
-                            "echo" | "exit" | "type" | "pwd" | "cd" => println!("{} is a shell builtin", target),
-                            _ => match path::find_in_path(target) {
-                                Some(p) => println!("{} is {}", target, p.display()),
-                                None => println!("{}: not found", target),
-                            },
-                        }
-                    },
-                    Command::External(cmd) => match path::find_in_path(cmd.name) {
-                        Some(path) => match process::run_program(&path, &cmd.name, &cmd.args) {
-                            Ok(()) => {}
-                            Err(err) => eprintln!("failed to run program: {err}"),
-                        },
-                        None => println!("{}: not found", cmd.name),
-                    },
-                    Command::Pwd => match path::current_directory() {
-                        Ok(dir) => println!("{}", dir.display()),
-                        Err(err) => eprintln!("error: {}", err)
-                    },
-                    Command::Cd(cmd) => {
-                        let target_dir = match cmd.args.first() {
-                            Some(dir) => *dir,
-                            None => {continue;}
-                        };
-
-                        match path::change_directory(target_dir) {
-                            Ok(()) => {},
-                            Err(_) => println!("cd: {}: No such file or directory", target_dir),
-                        }
-                    }
-                }
-            }
-            None => break,
-        }
-    }
+    ControlFlow::Continue(())
 }
 
 fn read_input() -> Option<String> {
@@ -106,6 +33,25 @@ fn read_input() -> Option<String> {
             }
         }
         Err(err) => panic!("err: {}", err),
+    }
+}
+
+fn run() {
+    loop {
+        print!("$ ");
+        io::stdout().flush().unwrap();
+
+        let Some(line) = read_input() else {
+            break;
+        };
+
+        let Some(cmd) = parse_command(&line) else {
+            continue;
+        };
+
+        if execute(cmd).is_break() {
+            break;
+        }
     }
 }
 

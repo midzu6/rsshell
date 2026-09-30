@@ -2,25 +2,35 @@ use std::io::{self, Write};
 
 mod path;
 
+struct ParseCommand<'a> {
+    name: &'a str,
+    args: Vec<&'a str>,
+}
+
 enum Command<'a> {
     Exit,
-    Echo(&'a str),
-    Type(&'a str),
-    Undefined,
+    Echo(ParseCommand<'a>),
+    Type(ParseCommand<'a>),
+    External(ParseCommand<'a>),
 }
 
 fn parse_command(command: &str) -> Command<'_> {
-
-    let mut parts = command.splitn(2, ' ');
+    let mut parts = command.split_whitespace();
 
     let name = parts.next().unwrap_or("");
-    let args = parts.next().unwrap_or("");
+    let mut args = Vec::new();
+
+    while let Some(arg) = parts.next() {
+        args.push(arg);
+    }
+
+    let command = ParseCommand { name, args };
 
     match name {
         "exit" => Command::Exit,
-        "echo" => Command::Echo(args),
-        "type" => Command::Type(args),
-        &_ => Command::Undefined,
+        "echo" => Command::Echo(command),
+        "type" => Command::Type(command),
+        _ => Command::External(command),
     }
 }
 
@@ -32,21 +42,31 @@ fn run() {
         match read_input() {
             Some(command) => {
                 let command = command.trim();
+                if command.is_empty() {
+                    continue;
+                }
                 match parse_command(command) {
                     Command::Exit => break,
-                    Command::Echo(args) => println!("{}", args),
-                    Command::Type(name) => {
-                        match name {
-                            "echo" | "exit" | "type" => println!("{} is a shell builtin", name),
-                            _ => match path::find_in_path(name) {
-                                Some(p) => println!("{} is {}", name, p.display()),
-                                None => println!("{}: not found", name)
+                    Command::Echo(cmd) => println!("{}", cmd.args.join(" ")),
+                    Command::Type(cmd) => {
+                        let target = match cmd.args.first() {
+                            Some(t) => *t,
+                            None => {
+                                continue;
                             }
+                        };
+
+                        match target {
+                            "echo" | "exit" | "type" => println!("{} is a shell builtin", target),
+                            _ => match path::find_in_path(target) {
+                                Some(p) => println!("{} is {}", target, p.display()),
+                                None => println!("{}: not found", target),
+                            },
                         }
-                    },
-                    Command::Undefined => println!("{}: command not found", command),
+                    }
+                    Command::External(cmd) => println!("{}: command not found", cmd.name),
                 }
-            },
+            }
             None => break,
         }
     }

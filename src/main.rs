@@ -63,7 +63,7 @@ fn run() {
                     }
                     Command::External(cmd) => {
                         match path::find_in_path(cmd.name) {
-                            Some(path) => match process::run_programm(&path, &cmd.args) {
+                            Some(path) => match process::run_programm(&path,&cmd.name, &cmd.args) {
                                 Ok(()) => {},
                                 Err(err) => eprintln!("failed to run program: {err}")
                             },

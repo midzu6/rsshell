@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 
 mod path;
+mod process;
 
 struct ParseCommand<'a> {
     name: &'a str,
@@ -60,7 +61,15 @@ fn run() {
                             },
                         }
                     }
-                    Command::External(cmd) => println!("{}: command not found", cmd.name),
+                    Command::External(cmd) => {
+                        match path::find_in_path(cmd.name) {
+                            Some(path) => match process::run_programm(&path, &cmd.args) {
+                                Ok(()) => {},
+                                Err(err) => eprintln!("failed to run program: {err}")
+                            },
+                            None => println!("{}: not found", cmd.name),
+                        }
+                    },
                 }
             }
             None => break,

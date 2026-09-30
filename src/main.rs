@@ -18,11 +18,7 @@ fn parse_command(command: &str) -> Command<'_> {
     let mut parts = command.split_whitespace();
 
     let name = parts.next().unwrap_or("");
-    let mut args = Vec::new();
-
-    while let Some(arg) = parts.next() {
-        args.push(arg);
-    }
+    let args: Vec<&str> = parts.collect();
 
     let command = ParseCommand { name, args };
 

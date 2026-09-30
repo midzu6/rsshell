@@ -56,7 +56,7 @@ fn run() {
                         };
 
                         match target {
-                            "echo" | "exit" | "type" => println!("{} is a shell builtin", target),
+                            "echo" | "exit" | "type" | "pwd" => println!("{} is a shell builtin", target),
                             _ => match path::find_in_path(target) {
                                 Some(p) => println!("{} is {}", target, p.display()),
                                 None => println!("{}: not found", target),

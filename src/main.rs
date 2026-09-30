@@ -3,16 +3,16 @@ use std::io::{self, Write};
 mod path;
 mod process;
 
-struct ParseCommand<'a> {
+struct ParsedCommand<'a> {
     name: &'a str,
     args: Vec<&'a str>,
 }
 
 enum Command<'a> {
     Exit,
-    Echo(ParseCommand<'a>),
-    Type(ParseCommand<'a>),
-    External(ParseCommand<'a>),
+    Echo(ParsedCommand<'a>),
+    Type(ParsedCommand<'a>),
+    External(ParsedCommand<'a>),
 }
 
 fn parse_command(command: &str) -> Command<'_> {
@@ -21,7 +21,7 @@ fn parse_command(command: &str) -> Command<'_> {
     let name = parts.next().unwrap_or("");
     let args: Vec<&str> = parts.collect();
 
-    let command = ParseCommand { name, args };
+    let command = ParsedCommand { name, args };
 
     match name {
         "exit" => Command::Exit,
@@ -61,14 +61,12 @@ fn run() {
                             },
                         }
                     }
-                    Command::External(cmd) => {
-                        match path::find_in_path(cmd.name) {
-                            Some(path) => match process::run_programm(&path,&cmd.name, &cmd.args) {
-                                Ok(()) => {},
-                                Err(err) => eprintln!("failed to run program: {err}")
-                            },
-                            None => println!("{}: not found", cmd.name),
-                        }
+                    Command::External(cmd) => match path::find_in_path(cmd.name) {
+                        Some(path) => match process::run_program(&path, &cmd.name, &cmd.args) {
+                            Ok(()) => {}
+                            Err(err) => eprintln!("failed to run program: {err}"),
+                        },
+                        None => println!("{}: not found", cmd.name),
                     },
                 }
             }

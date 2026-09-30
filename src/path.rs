@@ -1,7 +1,5 @@
-use::std::env;
+use ::std::env;
 use std::path::PathBuf;
-
-
 
 pub fn find_in_path(name: &str) -> Option<PathBuf> {
     let path_var = env::var_os("PATH")?;
